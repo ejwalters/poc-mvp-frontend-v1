@@ -92,17 +92,14 @@ const StyledInputBase = styled(InputBase)`
 
 const BASE_URL = 'http://localhost:5001';  // Base URL for the API
 
-// Header Component
-const Header = () => {
+const Header = ({ selectedDeal, setSelectedDeal }) => {
     const [token, setToken] = useState(localStorage.getItem('token') || '');
-    const [currentDeal, setCurrentDeal] = useState(null); // State for the current selected deal
-    const [deals, setDeals] = useState([]); // Empty array to hold deals fetched from the API
-    const [user, setUser] = useState(null); // State to hold the user data
-    const [anchorEl, setAnchorEl] = useState(null);
-    const isOpen = Boolean(anchorEl);
-
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-    const [userAnchorEl, setUserAnchorEl] = useState(null);
+    const [deals, setDeals] = useState([]);  // Array to hold deals fetched from the API
+    const [user, setUser] = useState(null);  // State to hold user data
+    const [dealAnchorEl, setDealAnchorEl] = useState(null); // Anchor for deal dropdown
+    const [userAnchorEl, setUserAnchorEl] = useState(null); // Anchor for user menu
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false); // Search field expansion state
+    const isDealMenuOpen = Boolean(dealAnchorEl);
     const isUserMenuOpen = Boolean(userAnchorEl);
 
     // Fetch deals and user data when the component mounts
@@ -119,13 +116,11 @@ const Header = () => {
                 const dealsResponse = await axios.get(`${BASE_URL}/deals`, config);
                 const fetchedDeals = dealsResponse.data;
 
-                // Set all deals and default the first deal as the current deal
                 if (fetchedDeals.length > 0) {
                     setDeals(fetchedDeals);
-                    setCurrentDeal(fetchedDeals[0]); // Set the first deal as the default
-                } else {
-                    setDeals([]); // If no deals, leave it empty
-                    setCurrentDeal({ deal_name: "Add A Deal" }); // Set default to "Add A Deal"
+                    if (!selectedDeal) {
+                        setSelectedDeal(fetchedDeals[0]);  // Set the first deal as the default if no deal is selected
+                    }
                 }
 
                 // Fetch user info
@@ -139,23 +134,19 @@ const Header = () => {
         if (token) {
             fetchData();
         }
-    }, [token]);
+    }, [token, selectedDeal, setSelectedDeal]);
 
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
+    const handleDealClick = (event) => {
+        setDealAnchorEl(event.currentTarget);
     };
 
-    const handleClose = () => {
-        setAnchorEl(null);
+    const handleDealClose = () => {
+        setDealAnchorEl(null);
     };
 
     const handleDealSelect = (deal) => {
-        setCurrentDeal(deal);
-        handleClose(); // Close the dropdown menu after selecting the deal
-    };
-
-    const handleSearchClick = () => {
-        setIsSearchExpanded((prev) => !prev);
+        setSelectedDeal(deal);  // Update the selected deal in the global state
+        handleDealClose();  // Close the dropdown
     };
 
     const handleUserMenuClick = (event) => {
@@ -172,17 +163,21 @@ const Header = () => {
         window.location.reload();
     };
 
-    if (!user || !currentDeal) {
+    const handleSearchClick = () => {
+        setIsSearchExpanded((prev) => !prev);
+    };
+
+    if (!user || !selectedDeal) {
         return <div>Loading...</div>; // Loading state while data is being fetched
     }
 
     return (
         <StyledAppBar>
             <LogoContainer>
-                <svg viewBox="0 0 48 48" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M24 4H42V17.3333V30.6667H24V44H6V30.6667V17.3333H24V4Z" fill="currentColor" />
-                </svg>
-                <Title>Sales Management App</Title>
+                <Link to="/">
+                    <img src="/path-to-your-logo/logo.png" alt="Logo" width="36" height="36" />
+                    <Title>Sales Management App</Title>
+                </Link>
             </LogoContainer>
 
             <NavLinks>
@@ -194,14 +189,16 @@ const Header = () => {
             </NavLinks>
 
             <RightSection>
-                <DealButton onClick={handleClick}>
-                    {currentDeal.deal_name} {/* Display the current deal name */}
+                {/* Deal Dropdown Button */}
+                <DealButton onClick={handleDealClick}>
+                    {selectedDeal ? selectedDeal.deal_name : "Select a Deal"} {/* Display the selected deal */}
                 </DealButton>
 
+                {/* Deal Dropdown Menu */}
                 <Menu
-                    anchorEl={anchorEl}
-                    open={isOpen}
-                    onClose={handleClose}
+                    anchorEl={dealAnchorEl}
+                    open={isDealMenuOpen}
+                    onClose={handleDealClose}
                     PaperProps={{
                         elevation: 3,
                         sx: {
@@ -212,19 +209,13 @@ const Header = () => {
                     }}
                 >
                     {deals.map((deal) => (
-                        <MenuItem
-                            key={deal.id}
-                            onClick={() => handleDealSelect(deal)} // Set selected deal as current
-                            sx={{
-                                padding: '10px 20px',
-                                fontWeight: deal.id === currentDeal.id ? 'bold' : 'normal',
-                            }}
-                        >
-                            {deal.deal_name} {/* Display deal name */}
+                        <MenuItem key={deal.id} onClick={() => handleDealSelect(deal)}>
+                            {deal.deal_name}
                         </MenuItem>
                     ))}
                 </Menu>
 
+                {/* Search Icon and Input */}
                 <SearchContainer isExpanded={isSearchExpanded}>
                     <IconButton onClick={handleSearchClick} sx={{ padding: '4px' }}>
                         <SearchIcon sx={{ color: '#0e141b' }} />
@@ -232,10 +223,12 @@ const Header = () => {
                     {isSearchExpanded && <StyledInputBase placeholder="Search..." />}
                 </SearchContainer>
 
+                {/* Notification Icon */}
                 <IconButton sx={{ backgroundColor: '#e7edf3', borderRadius: 2 }}>
                     <NotificationsIcon sx={{ color: '#0e141b' }} />
                 </IconButton>
 
+                {/* User Menu */}
                 <IconButton onClick={handleUserMenuClick}>
                     <Avatar
                         src={user.avatarUrl || 'https://cdn.usegalileo.ai/stability/07c83bff-b55a-44ca-a01f-a1e09a0d4ac6.png'}
@@ -244,6 +237,7 @@ const Header = () => {
                     />
                 </IconButton>
 
+                {/* User Info */}
                 <Menu
                     anchorEl={userAnchorEl}
                     open={isUserMenuOpen}

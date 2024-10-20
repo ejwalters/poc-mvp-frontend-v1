@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Login from './components/Login';
+import MainPage from './components/MainPage';  // Import MainPage component
 import styled from 'styled-components';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -17,6 +18,7 @@ const AppContent = styled.main`
 
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [selectedDeal, setSelectedDeal] = useState(null);  // State to track selected deal
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
@@ -34,10 +36,12 @@ const App = () => {
   return (
     <Router>
       <AppContainer>
-        <Header />
+        {/* Pass selectedDeal and setSelectedDeal to the Header to manage deal selection */}
+        <Header selectedDeal={selectedDeal} setSelectedDeal={setSelectedDeal} />
         <AppContent>
           <Routes>
-            <Route path="/" element={<div>Home Page</div>} />
+            {/* MainPage should receive the selectedDeal to load content accordingly */}
+            <Route path="/" element={<MainPage selectedDeal={selectedDeal} />} />
             <Route path="/pipeline" element={<div>Pipeline Page</div>} />
             <Route path="/library" element={<div>Library Page</div>} />
             <Route path="/insights" element={<div>Insights Page</div>} />
