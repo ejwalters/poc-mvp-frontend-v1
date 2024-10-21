@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, ListItem, ListItemText, Avatar, TextField } from '@mui/material';
+import { List, ListItem, ListItemText, Avatar, TextField, Button, Box } from '@mui/material';
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -19,13 +19,11 @@ const StyledAvatar = styled(Avatar)`
 
 const StyledTextField = styled(TextField)`
   flex-grow: 1;
-
   .MuiOutlinedInput-root {
     height: 36px;
     padding: 0 12px;
     font-size: 14px;
   }
-
   .MuiInputBase-input {
     padding: 8px;
     font-size: 14px;
@@ -45,13 +43,11 @@ const CreateButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-
   &:hover {
     background-color: #0056b3;
   }
 `;
 
-// Define selected and unselected styles directly within styled-components
 const StyledListItem = styled(ListItem)`
   cursor: pointer;
   align-items: flex-start;
@@ -69,22 +65,13 @@ const StyledListItem = styled(ListItem)`
  * This component displays a list of message threads for a selected deal.
  * It allows the user to search for message threads by their subject, sender's name, or message content.
  * 
- * State:
- * - threads (Array): The list of message threads for the selected deal.
- * - searchTerm (String): The current search term for filtering the threads.
- * 
  * Props:
  * - selectedDeal (Object): The currently selected deal. Threads will be fetched for this deal.
  * - selectedThreadId (Number): The ID of the currently selected message thread.
  * - onSelectThread (Function): Callback function to handle when a message thread is selected.
- * 
- * Key Features:
- * - Fetches and displays threads related to the selected deal.
- * - Allows filtering of threads based on the search term, which can match the subject, message content, or sender's name.
- * - Highlights the selected thread.
+ * - onCreateNewThread (Function): Callback to trigger showing the new thread form.
  */
-
-const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
+const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateNewThread }) => {
     const [threads, setThreads] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -99,7 +86,6 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
                             Authorization: `Bearer ${token}`,
                         },
                     });
-                    console.log(response.data);
                     setThreads(response.data);  // Set the fetched threads
                 } catch (error) {
                     console.error('Error fetching threads:', error);
@@ -114,31 +100,21 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
         setSearchTerm(event.target.value);
     };
 
-    // Handle thread creation (mock)
-    const handleCreateNewThread = () => {
-        console.log("Creating a new message thread");
-    };
-
     // Filter threads based on the search term (matches subject, message content, or sender's name)
     const filteredThreads = threads.filter((thread) => {
         const lowerSearchTerm = searchTerm.toLowerCase();
-
         const subjectMatch = thread.subject.toLowerCase().includes(lowerSearchTerm);
 
-        // Check for matches in messages (content or sender's name)
         const messageOrSenderMatch = thread.messages && thread.messages.some((message) =>
             message.content.toLowerCase().includes(lowerSearchTerm) ||
             `${message.sender_name}`.toLowerCase().includes(lowerSearchTerm)
         );
-
-        console.log(thread.messages);
 
         return subjectMatch || messageOrSenderMatch;
     });
 
     return (
         <>
-            {/* Search bar and create button */}
             <SearchContainer>
                 <StyledTextField
                     variant="outlined"
@@ -147,16 +123,15 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
                     onChange={handleSearchChange}
                     size="small"
                 />
-                <CreateButton onClick={handleCreateNewThread}>New Thread</CreateButton>
+                <CreateButton onClick={onCreateNewThread}>New Thread</CreateButton>
             </SearchContainer>
 
-            {/* List of filtered threads */}
             <List>
                 {filteredThreads.length > 0 ? (
                     filteredThreads.map((thread) => (
                         <StyledListItem
                             key={thread.id}
-                            selected={thread.id === selectedThreadId}  // Highlight if selected
+                            selected={thread.id === selectedThreadId}
                             onClick={() => onSelectThread(thread)}
                         >
                             <StyledAvatar alt={thread.subject} src="/static/images/avatar/1.jpg" />

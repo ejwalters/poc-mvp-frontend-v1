@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Tabs, Tab, Box, Typography } from '@mui/material';
 import styled from 'styled-components';
-import MessageList from './MessageList'; // MessageList Component
-import MessageThread from './MessageThread'; // MessageThread Component
+import MessageList from './MessageList';  // MessageList Component
+import MessageThread from './MessageThread';  // MessageThread Component
+import NewThreadForm from './NewThreadForm';  // NewThreadForm Component
 
 // Styled components for the tab content
 const TabContent = styled.div`
@@ -37,29 +38,10 @@ function TabPanel({ children, value, index }) {
     );
 }
 
-/**
- * MainPage Component
- * 
- * This component represents the main page for interacting with a selected deal.
- * It contains a tabbed interface where users can switch between different sections of the deal, such as messages, tasks, stakeholders, etc.
- * The Messages tab allows the user to view and select message threads related to the selected deal.
- * 
- * State:
- * - tabValue (Number): Represents the currently selected tab.
- * - selectedThreadId (Number): The ID of the selected message thread, used to fetch and display messages.
- * 
- * Props:
- * - selectedDeal (Object): The currently selected deal passed from the parent component.
- * 
- * Key Features:
- * - Displays different sections (Messages, Tasks, Stakeholders, etc.) for the selected deal.
- * - The Messages tab allows users to select a thread from the left column (MessageList) and view its content in the right column (MessageThread).
- * - The selected thread is reset when the user switches tabs or selects a new deal.
- */
-
 const MainPage = ({ selectedDeal }) => {
     const [tabValue, setTabValue] = useState(0);
     const [selectedThreadId, setSelectedThreadId] = useState(null); // Track selected thread ID
+    const [isCreatingNewThread, setIsCreatingNewThread] = useState(false); // Track if new thread is being created
     const prevSelectedDealRef = useRef(selectedDeal); // Store the previous deal
 
     const handleTabChange = (event, newValue) => {
@@ -67,13 +49,25 @@ const MainPage = ({ selectedDeal }) => {
         setSelectedThreadId(null); // Reset thread when switching tabs
     };
 
-    // Clear the selected thread only if the selectedDeal changes and it's different from the previous one
+    // Clear the selected thread and new thread form if the selected deal changes
     useEffect(() => {
         if (prevSelectedDealRef.current && selectedDeal && prevSelectedDealRef.current.id !== selectedDeal.id) {
-            setSelectedThreadId(null); // Reset the selected thread only if a new deal is selected
+            setSelectedThreadId(null); // Reset the selected thread if a new deal is selected
+            setIsCreatingNewThread(false);  // Reset the form if a new deal is selected
         }
         prevSelectedDealRef.current = selectedDeal; // Update previous deal reference
     }, [selectedDeal]);
+
+    // Show form instead of message thread if creating a new thread
+    const handleCreateNewThread = () => {
+        setIsCreatingNewThread(true);
+    };
+
+    // Handle new thread creation and stop showing the form
+    const handleNewThreadCreated = (newThread) => {
+        setIsCreatingNewThread(false);  // Hide the form
+        setSelectedThreadId(newThread.id);  // Automatically select the newly created thread
+    };
 
     if (!selectedDeal) {
         return <div>Please select a deal to view details</div>;  // Message if no deal is selected
@@ -100,13 +94,23 @@ const MainPage = ({ selectedDeal }) => {
                         <MessageList
                             selectedDeal={selectedDeal}
                             selectedThreadId={selectedThreadId}  // Pass selectedThreadId
-                            onSelectThread={(thread) => setSelectedThreadId(thread.id)} // Set thread ID on selection
+                            onSelectThread={(thread) => {
+                                setSelectedThreadId(thread.id);  // Set thread ID on selection
+                                setIsCreatingNewThread(false);  // Ensure form is hidden
+                            }}
+                            onCreateNewThread={handleCreateNewThread} // Trigger form in MessageThread context
                         />
                     </LeftColumn>
 
-                    {/* Right side: Message Thread */}
+                    {/* Right side: Message Thread or New Thread Form */}
                     <RightColumn>
-                        {selectedThreadId ? (
+                        {isCreatingNewThread ? (
+                            <NewThreadForm
+                                selectedDeal={selectedDeal}
+                                onNewThreadCreated={handleNewThreadCreated}
+                                onCancel={() => setIsCreatingNewThread(false)}
+                            />
+                        ) : selectedThreadId ? (
                             <MessageThread
                                 selectedThreadId={selectedThreadId}
                                 onBack={() => setSelectedThreadId(null)} // Reset the thread when "Back" is clicked
@@ -119,42 +123,6 @@ const MainPage = ({ selectedDeal }) => {
             </TabPanel>
 
             {/* Other tab panels remain the same */}
-            <TabPanel value={tabValue} index={1}>
-                <TabContent>
-                    <Typography variant="h6">Tasks for {selectedDeal.deal_name}</Typography>
-                    <p>Here are the tasks for {selectedDeal.deal_name}.</p>
-                </TabContent>
-            </TabPanel>
-            <TabPanel value={tabValue} index={2}>
-                <TabContent>
-                    <Typography variant="h6">Stakeholders for {selectedDeal.deal_name}</Typography>
-                    <p>Here are the stakeholders for {selectedDeal.deal_name}.</p>
-                </TabContent>
-            </TabPanel>
-            <TabPanel value={tabValue} index={3}>
-                <TabContent>
-                    <Typography variant="h6">Notes for {selectedDeal.deal_name}</Typography>
-                    <p>Here are the notes for {selectedDeal.deal_name}.</p>
-                </TabContent>
-            </TabPanel>
-            <TabPanel value={tabValue} index={4}>
-                <TabContent>
-                    <Typography variant="h6">Documents for {selectedDeal.deal_name}</Typography>
-                    <p>Here are the documents for {selectedDeal.deal_name}.</p>
-                </TabContent>
-            </TabPanel>
-            <TabPanel value={tabValue} index={5}>
-                <TabContent>
-                    <Typography variant="h6">Activity Feed for {selectedDeal.deal_name}</Typography>
-                    <p>Here is the activity feed for {selectedDeal.deal_name}.</p>
-                </TabContent>
-            </TabPanel>
-            <TabPanel value={tabValue} index={6}>
-                <TabContent>
-                    <Typography variant="h6">Roadmap for {selectedDeal.deal_name}</Typography>
-                    <p>Here is the roadmap for {selectedDeal.deal_name}.</p>
-                </TabContent>
-            </TabPanel>
         </div>
     );
 };
