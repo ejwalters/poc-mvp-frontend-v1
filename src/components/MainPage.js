@@ -39,18 +39,18 @@ function TabPanel({ children, value, index }) {
 
 const MainPage = ({ selectedDeal }) => {
     const [tabValue, setTabValue] = useState(0);
-    const [selectedThread, setSelectedThread] = useState(null); // Manage selected message thread
+    const [selectedThreadId, setSelectedThreadId] = useState(null); // Track selected thread ID
     const prevSelectedDealRef = useRef(selectedDeal); // Store the previous deal
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
-        setSelectedThread(null); // Reset thread when switching tabs
+        setSelectedThreadId(null); // Reset thread when switching tabs
     };
 
     // Clear the selected thread only if the selectedDeal changes and it's different from the previous one
     useEffect(() => {
         if (prevSelectedDealRef.current && selectedDeal && prevSelectedDealRef.current.id !== selectedDeal.id) {
-            setSelectedThread(null); // Reset the selected thread only if a new deal is selected
+            setSelectedThreadId(null); // Reset the selected thread only if a new deal is selected
         }
         prevSelectedDealRef.current = selectedDeal; // Update previous deal reference
     }, [selectedDeal]);
@@ -77,13 +77,20 @@ const MainPage = ({ selectedDeal }) => {
                 <MainContainer>
                     {/* Left side: Message List */}
                     <LeftColumn>
-                        <MessageList selectedDeal={selectedDeal} onSelectThread={setSelectedThread} />
+                        <MessageList
+                            selectedDeal={selectedDeal}
+                            selectedThreadId={selectedThreadId}  // Pass selectedThreadId
+                            onSelectThread={(thread) => setSelectedThreadId(thread.id)} // Set thread ID on selection
+                        />
                     </LeftColumn>
 
                     {/* Right side: Message Thread */}
                     <RightColumn>
-                        {selectedThread ? (
-                            <MessageThread selectedThread={selectedThread} onBack={() => setSelectedThread(null)} />
+                        {selectedThreadId ? (
+                            <MessageThread
+                                selectedThreadId={selectedThreadId}
+                                onBack={() => setSelectedThreadId(null)} // Reset the thread when "Back" is clicked
+                            />
                         ) : (
                             <Typography variant="h6">Select a message to view its content.</Typography>
                         )}

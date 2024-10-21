@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { List, ListItem, ListItemText, Avatar, TextField } from '@mui/material';
 import styled from 'styled-components';
-import axios from 'axios';  // You'll use axios to make API requests
+import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5001';  // Base URL for the API
+const BASE_URL = 'http://localhost:5001';
 
 // Styled components for message list
 const SearchContainer = styled.div`
@@ -13,36 +13,28 @@ const SearchContainer = styled.div`
   padding: 10px 0;
 `;
 
-const StyledListItem = styled(ListItem)`
-  cursor: pointer;
-  align-items: flex-start; /* Ensures avatar and text are aligned properly */
-  &:hover {
-    background-color: #f5f5f5; /* Optional: Hover effect */
-  }
-`;
-
 const StyledAvatar = styled(Avatar)`
-  margin-right: 15px; /* Add space between avatar and text */
+  margin-right: 15px;
 `;
 
 const StyledTextField = styled(TextField)`
   flex-grow: 1;
 
   .MuiOutlinedInput-root {
-    height: 36px; /* Set the height of the input to match the button */
-    padding: 0 12px; /* Reduce padding to decrease height */
-    font-size: 14px; /* Adjust font size for a compact look */
+    height: 36px;
+    padding: 0 12px;
+    font-size: 14px;
   }
 
   .MuiInputBase-input {
-    padding: 8px; /* Adjust padding inside the input to reduce its height */
-    font-size: 14px; /* Adjust font size */
+    padding: 8px;
+    font-size: 14px;
   }
 `;
 
 const CreateButton = styled.button`
   margin-left: 10px;
-  height: 36px; /* Match the height of the search bar */
+  height: 36px;
   padding: 0 15px;
   background-color: #007bff;
   color: white;
@@ -59,27 +51,38 @@ const CreateButton = styled.button`
   }
 `;
 
-const MessageList = ({ selectedDeal, onSelectThread }) => {
+// Define selected and unselected styles directly within styled-components
+const StyledListItem = styled(ListItem)`
+  cursor: pointer;
+  align-items: flex-start;
+  background-color: ${(props) => (props.selected ? '#e0f7fa' : 'transparent')};
+  border-left: ${(props) => (props.selected ? '4px solid #007bff' : 'none')};
+  transition: background-color 0.3s ease, border-left 0.3s ease;
+  &:hover {
+    background-color: #f5f5f5;
+  }
+`;
+
+const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
     const [threads, setThreads] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (selectedDeal) {
-            // Fetch threads based on the selected deal's ID
             const fetchThreads = async () => {
                 try {
-                    const token = localStorage.getItem('token'); // Retrieve the token from local storage
+                    const token = localStorage.getItem('token');
                     const response = await axios.get(`${BASE_URL}/deals/${selectedDeal.id}/threads`, {
                         headers: {
-                            Authorization: `Bearer ${token}` // Add Authorization header
-                        }
+                            Authorization: `Bearer ${token}`,
+                        },
                     });
-                    setThreads(response.data); // Assuming the response contains the list of threads
+                    console.log(response.data);
+                    setThreads(response.data);
                 } catch (error) {
                     console.error('Error fetching threads:', error);
                 }
             };
-
             fetchThreads();
         }
     }, [selectedDeal]);
@@ -97,18 +100,16 @@ const MessageList = ({ selectedDeal, onSelectThread }) => {
 
         const subjectMatch = thread.subject.toLowerCase().includes(lowerSearchTerm);
 
-        // Ensure messages array exists before calling 'some()' on it
-        const messageMatch = thread.messages && thread.messages.some((message) =>
-            message.content.toLowerCase().includes(lowerSearchTerm)
+        // Check for matches in messages (content or sender's name)
+        const messageOrSenderMatch = thread.messages && thread.messages.some((message) =>
+            message.content.toLowerCase().includes(lowerSearchTerm) ||
+            `${message.sender_name}`.toLowerCase().includes(lowerSearchTerm)
         );
 
-        const senderMatch = thread.messages && thread.messages.some((message) =>
-            message.sender.toLowerCase().includes(lowerSearchTerm)
-        );
+        console.log(thread.messages);
 
-        return subjectMatch || messageMatch || senderMatch;
+        return subjectMatch || messageOrSenderMatch;
     });
-
 
     return (
         <>
@@ -128,13 +129,13 @@ const MessageList = ({ selectedDeal, onSelectThread }) => {
                     filteredThreads.map((thread) => (
                         <StyledListItem
                             key={thread.id}
-                            button
+                            selected={thread.id === selectedThreadId}  // Highlight if selected
                             onClick={() => onSelectThread(thread)}
                         >
                             <StyledAvatar alt={thread.subject} src="/static/images/avatar/1.jpg" />
                             <ListItemText
                                 primary={thread.subject}
-                                secondary={new Date(thread.lastMessageDate).toLocaleDateString()}
+                                secondary={new Date(thread.last_message_date).toLocaleDateString()}
                             />
                         </StyledListItem>
                     ))

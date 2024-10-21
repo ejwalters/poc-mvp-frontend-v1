@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Typography, Box, Avatar, List, ListItemText, TextField, Button } from '@mui/material';
 import styled from 'styled-components';
 import axios from 'axios';  // For making API requests
+
+const BASE_URL = 'http://localhost:5001';  // Base URL for the API
 
 const MessageBox = styled(Box)`
   display: flex;
@@ -30,24 +32,22 @@ const SendContainer = styled.div`
   margin-top: 20px;
 `;
 
-const MessageThread = ({ selectedThread, searchTerm }) => {
+const MessageThread = ({ selectedThreadId }) => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
-    const firstMatchRef = useRef(null);
 
     useEffect(() => {
-        if (selectedThread) {
+        if (selectedThreadId) {
             const fetchMessages = async () => {
                 try {
                     setLoading(true);
-                    console.log(`Fetching messages for thread: ${selectedThread.id}`);
-                    const response = await axios.get(`http://localhost:5001/threads/${selectedThread.id}/messages`, {
+                    const token = localStorage.getItem('token');  // Fetch token
+                    const response = await axios.get(`${BASE_URL}/threads/${selectedThreadId}/messages`, {
                         headers: {
-                            Authorization: `Bearer ${localStorage.getItem('token')}`,
+                            Authorization: `Bearer ${token}`,
                         },
                     });
-                    console.log('Messages fetched:', response.data);
-                    setMessages(response.data || []); // Set messages, fallback to an empty array if no data
+                    setMessages(response.data || []);  // Set the fetched messages
                 } catch (error) {
                     console.error('Error fetching messages:', error);
                 } finally {
@@ -56,52 +56,35 @@ const MessageThread = ({ selectedThread, searchTerm }) => {
             };
             fetchMessages();
         }
-    }, [selectedThread]);
+    }, [selectedThreadId]);
 
-    useEffect(() => {
-        if (firstMatchRef.current) {
-            firstMatchRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, [messages]);
-
-    // Handle cases where selectedThread or messages are undefined or empty
-    if (!selectedThread) {
-        return <div>Select a thread to view messages</div>;
+    if (!selectedThreadId) {
+        return <Typography variant="h6">Select a thread to view its messages.</Typography>;
     }
 
     if (loading) {
-        return <div>Loading messages...</div>;
+        return <Typography variant="h6">Loading messages...</Typography>;
     }
 
     if (!messages.length) {
-        return <div>No messages found for this thread.</div>;
+        return <Typography variant="h6">No messages found for this thread.</Typography>;
     }
 
     return (
         <div>
-            <Typography variant="h5" gutterBottom>
-                {selectedThread.subject || 'No subject'}
-            </Typography>
             <List>
-                {messages.map((message, index) => {
-                    const hasMatch = searchTerm && message.content?.toLowerCase().includes(searchTerm.toLowerCase());
-
-                    // Combine first name and last name for the sender
-                    const senderFullName = `${message.first_name} ${message.last_name}`;
-
-                    return (
-                        <MessageBox key={index} ref={hasMatch && !firstMatchRef.current ? firstMatchRef : null}>
-                            <Avatar>{message.first_name?.[0] || 'U'}</Avatar> {/* Show first letter of first_name */}
-                            <MessageBubble>
-                                <ListItemText
-                                    primary={senderFullName || 'Unknown Sender'} // Show full name or fallback to "Unknown Sender"
-                                    secondary={message.content || 'No content available'}
-                                />
-                                <DateTime>{new Date(message.created_at).toLocaleString()}</DateTime>
-                            </MessageBubble>
-                        </MessageBox>
-                    );
-                })}
+                {messages.map((message, index) => (
+                    <MessageBox key={index}>
+                        <Avatar>{message.sender_name?.[0] || 'U'}</Avatar>
+                        <MessageBubble>
+                            <ListItemText
+                                primary={message.sender_name || 'Unknown Sender'}
+                                secondary={message.content || 'No content available'}
+                            />
+                            <DateTime>{new Date(message.created_at).toLocaleString()}</DateTime>
+                        </MessageBubble>
+                    </MessageBox>
+                ))}
             </List>
 
             <SendContainer>
