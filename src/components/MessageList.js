@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, ListItem, ListItemText, Avatar, TextField, Button, Box } from '@mui/material';
+import { List, ListItem, ListItemText, Avatar, TextField } from '@mui/material';
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -19,11 +19,13 @@ const StyledAvatar = styled(Avatar)`
 
 const StyledTextField = styled(TextField)`
   flex-grow: 1;
+
   .MuiOutlinedInput-root {
     height: 36px;
     padding: 0 12px;
     font-size: 14px;
   }
+
   .MuiInputBase-input {
     padding: 8px;
     font-size: 14px;
@@ -43,6 +45,7 @@ const CreateButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+
   &:hover {
     background-color: #0056b3;
   }
@@ -61,46 +64,14 @@ const StyledListItem = styled(ListItem)`
 
 /**
  * MessageList Component
- * 
- * This component displays a list of message threads for a selected deal.
- * It allows the user to search for message threads by their subject, sender's name, or message content.
- * 
- * Props:
- * - selectedDeal (Object): The currently selected deal. Threads will be fetched for this deal.
- * - selectedThreadId (Number): The ID of the currently selected message thread.
- * - onSelectThread (Function): Callback function to handle when a message thread is selected.
- * - onCreateNewThread (Function): Callback to trigger showing the new thread form.
  */
-const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateNewThread }) => {
-    const [threads, setThreads] = useState([]);
+const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateNewThread, threads }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Fetch threads for the selected deal when the selectedDeal changes
-    useEffect(() => {
-        if (selectedDeal) {
-            const fetchThreads = async () => {
-                try {
-                    const token = localStorage.getItem('token');
-                    const response = await axios.get(`${BASE_URL}/deals/${selectedDeal.id}/threads`, {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    });
-                    setThreads(response.data);  // Set the fetched threads
-                } catch (error) {
-                    console.error('Error fetching threads:', error);
-                }
-            };
-            fetchThreads();
-        }
-    }, [selectedDeal]);
-
-    // Handle search term changes
     const handleSearchChange = (event) => {
         setSearchTerm(event.target.value);
     };
 
-    // Filter threads based on the search term (matches subject, message content, or sender's name)
     const filteredThreads = threads.filter((thread) => {
         const lowerSearchTerm = searchTerm.toLowerCase();
         const subjectMatch = thread.subject.toLowerCase().includes(lowerSearchTerm);
@@ -134,7 +105,7 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateN
                             selected={thread.id === selectedThreadId}
                             onClick={() => onSelectThread(thread)}
                         >
-                            <StyledAvatar alt={thread.subject} src="/static/images/avatar/1.jpg" />
+                            <StyledAvatar alt={thread.subject} />
                             <ListItemText
                                 primary={thread.subject}
                                 secondary={new Date(thread.last_message_date).toLocaleDateString()}
