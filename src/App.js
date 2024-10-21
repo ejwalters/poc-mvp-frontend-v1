@@ -16,10 +16,38 @@ const AppContent = styled.main`
   padding: 20px;
 `;
 
+/**
+ * App Component
+ * 
+ * This is the main component of the application. It handles routing, authentication,
+ * and manages the state for the selected deal. If a token is stored in local storage, 
+ * the user is considered authenticated and can access the main content.
+ * 
+ * State:
+ * - token (String): The JWT token used for authentication, retrieved from local storage.
+ * - selectedDeal (Object|null): The currently selected deal object. Managed by the Header component.
+ * 
+ * Components:
+ * - Header: Displays navigation and allows the user to select a deal.
+ * - Login: Displays the login form if the user is not authenticated.
+ * - MainPage: Displays the main content, including messages, tasks, stakeholders, etc., based on the selected deal.
+ * 
+ * Routes:
+ * - `/`: Main page displaying details of the selected deal.
+ * - `/pipeline`: Placeholder route for pipeline-related content.
+ * - `/library`: Placeholder route for library-related content.
+ * - `/insights`: Placeholder route for insights-related content.
+ * - `/reports`: Placeholder route for reports-related content.
+ * 
+ * Example Usage:
+ * <App />
+ */
+
 const App = () => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [selectedDeal, setSelectedDeal] = useState(null);  // State to track selected deal
 
+  // Check for token in local storage on component mount
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
@@ -27,11 +55,12 @@ const App = () => {
     }
   }, []);
 
+  // If no token is found, display the Login component
   if (!token) {
     return <Login setToken={setToken} />;
   }
 
-  console.log(token);
+  console.log(token);  // Debugging output to verify the token
 
   return (
     <Router>

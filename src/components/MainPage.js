@@ -37,6 +37,26 @@ function TabPanel({ children, value, index }) {
     );
 }
 
+/**
+ * MainPage Component
+ * 
+ * This component represents the main page for interacting with a selected deal.
+ * It contains a tabbed interface where users can switch between different sections of the deal, such as messages, tasks, stakeholders, etc.
+ * The Messages tab allows the user to view and select message threads related to the selected deal.
+ * 
+ * State:
+ * - tabValue (Number): Represents the currently selected tab.
+ * - selectedThreadId (Number): The ID of the selected message thread, used to fetch and display messages.
+ * 
+ * Props:
+ * - selectedDeal (Object): The currently selected deal passed from the parent component.
+ * 
+ * Key Features:
+ * - Displays different sections (Messages, Tasks, Stakeholders, etc.) for the selected deal.
+ * - The Messages tab allows users to select a thread from the left column (MessageList) and view its content in the right column (MessageThread).
+ * - The selected thread is reset when the user switches tabs or selects a new deal.
+ */
+
 const MainPage = ({ selectedDeal }) => {
     const [tabValue, setTabValue] = useState(0);
     const [selectedThreadId, setSelectedThreadId] = useState(null); // Track selected thread ID

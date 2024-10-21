@@ -64,6 +64,30 @@ const LoaderContainer = styled.div`
   margin-top: 1rem;
 `;
 
+/**
+ * Login Component
+ *
+ * This component is responsible for displaying the login form and handling user authentication.
+ * The component collects the user's email and password, sends a login request to the server,
+ * and retrieves a JWT token if the login is successful.
+ * 
+ * State:
+ * - email (String): Stores the entered email.
+ * - password (String): Stores the entered password.
+ * - loading (Boolean): Tracks whether the login request is in progress, disables the form during the request.
+ * 
+ * Props:
+ * - setToken (Function): A function passed from the parent component (App.js) to store the JWT token.
+ * 
+ * Example Usage:
+ * <Login setToken={setToken} />
+ * 
+ * Key Features:
+ * - Displays a spinner while the login request is processing.
+ * - Disables the form inputs and the login button while the request is in progress.
+ * - Sends the JWT token back to the parent component and saves it in local storage for future use.
+ */
+
 const Login = ({ setToken }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');

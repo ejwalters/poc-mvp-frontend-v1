@@ -92,6 +92,32 @@ const StyledInputBase = styled(InputBase)`
 
 const BASE_URL = 'http://localhost:5001';  // Base URL for the API
 
+/**
+ * Header Component
+ * 
+ * This component is responsible for rendering the top navigation bar of the application.
+ * It displays the logo, navigation links, search functionality, deal selection, notifications, and user profile information.
+ * 
+ * State:
+ * - token (String): JWT token used for authenticating API requests, stored in localStorage.
+ * - deals (Array): A list of deals fetched from the server for the authenticated user.
+ * - user (Object): Information about the authenticated user fetched from the API.
+ * - dealAnchorEl (HTMLElement): Anchor element for the deal dropdown menu.
+ * - userAnchorEl (HTMLElement): Anchor element for the user profile dropdown menu.
+ * - isSearchExpanded (Boolean): Determines whether the search input field is expanded or collapsed.
+ * 
+ * Props:
+ * - selectedDeal (Object): The currently selected deal, managed by the parent component.
+ * - setSelectedDeal (Function): A function passed from the parent component to update the selected deal.
+ * 
+ * Key Features:
+ * - Allows users to select a deal from a dropdown menu.
+ * - Displays user profile information including their name, role, and access level.
+ * - Provides search functionality that expands or collapses dynamically.
+ * - Fetches and displays user-specific deals and profile information upon component mounting.
+ * - Logs the user out by clearing the JWT token from localStorage and refreshing the page.
+ */
+
 const Header = ({ selectedDeal, setSelectedDeal }) => {
     const [token, setToken] = useState(localStorage.getItem('token') || '');
     const [deals, setDeals] = useState([]);  // Array to hold deals fetched from the API

@@ -63,10 +63,32 @@ const StyledListItem = styled(ListItem)`
   }
 `;
 
+/**
+ * MessageList Component
+ * 
+ * This component displays a list of message threads for a selected deal.
+ * It allows the user to search for message threads by their subject, sender's name, or message content.
+ * 
+ * State:
+ * - threads (Array): The list of message threads for the selected deal.
+ * - searchTerm (String): The current search term for filtering the threads.
+ * 
+ * Props:
+ * - selectedDeal (Object): The currently selected deal. Threads will be fetched for this deal.
+ * - selectedThreadId (Number): The ID of the currently selected message thread.
+ * - onSelectThread (Function): Callback function to handle when a message thread is selected.
+ * 
+ * Key Features:
+ * - Fetches and displays threads related to the selected deal.
+ * - Allows filtering of threads based on the search term, which can match the subject, message content, or sender's name.
+ * - Highlights the selected thread.
+ */
+
 const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
     const [threads, setThreads] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Fetch threads for the selected deal when the selectedDeal changes
     useEffect(() => {
         if (selectedDeal) {
             const fetchThreads = async () => {
@@ -78,7 +100,7 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
                         },
                     });
                     console.log(response.data);
-                    setThreads(response.data);
+                    setThreads(response.data);  // Set the fetched threads
                 } catch (error) {
                     console.error('Error fetching threads:', error);
                 }
@@ -87,14 +109,17 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
         }
     }, [selectedDeal]);
 
+    // Handle search term changes
     const handleSearchChange = (event) => {
         setSearchTerm(event.target.value);
     };
 
+    // Handle thread creation (mock)
     const handleCreateNewThread = () => {
         console.log("Creating a new message thread");
     };
 
+    // Filter threads based on the search term (matches subject, message content, or sender's name)
     const filteredThreads = threads.filter((thread) => {
         const lowerSearchTerm = searchTerm.toLowerCase();
 
@@ -113,6 +138,7 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
 
     return (
         <>
+            {/* Search bar and create button */}
             <SearchContainer>
                 <StyledTextField
                     variant="outlined"
@@ -124,6 +150,7 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread }) => {
                 <CreateButton onClick={handleCreateNewThread}>New Thread</CreateButton>
             </SearchContainer>
 
+            {/* List of filtered threads */}
             <List>
                 {filteredThreads.length > 0 ? (
                     filteredThreads.map((thread) => (
