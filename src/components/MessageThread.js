@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { jwtDecode } from 'jwt-decode';  // Use named import (no default export)
+import React, { useEffect, useState, useRef } from 'react';
 import { Typography, Box, Avatar, List, ListItemText, TextField, Button } from '@mui/material';
 import styled from 'styled-components';
 import axios from 'axios';  // For making API requests
@@ -6,6 +7,17 @@ import axios from 'axios';  // For making API requests
 const BASE_URL = 'http://localhost:5001';  // Base URL for the API
 
 // Styled components for message thread display
+const MessageContainer = styled(Box)`
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px);  // Adjust height to match the MessageList height
+  overflow-y: auto;  // Enable scrolling for overflow content
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+`;
+
 const MessageBox = styled(Box)`
   display: flex;
   margin-bottom: 20px;
@@ -33,29 +45,11 @@ const SendContainer = styled.div`
   margin-top: 20px;
 `;
 
-/**
- * MessageThread Component
- * 
- * This component is responsible for displaying the list of messages within a selected message thread.
- * It fetches messages from the API and displays them, along with the sender's name, message content, and timestamp.
- * 
- * State:
- * - messages (Array): The list of messages fetched from the server for the selected thread.
- * - loading (Boolean): Indicates if the messages are currently being fetched.
- * 
- * Props:
- * - selectedThreadId (Number): The ID of the currently selected thread. The component will fetch and display the messages for this thread.
- * 
- * Key Features:
- * - Fetches and displays messages for the selected thread.
- * - Displays a loading state while messages are being fetched.
- * - Shows a form for typing new messages (the actual sending functionality can be implemented later).
- * - Handles cases when no thread is selected, no messages are found, or an error occurs.
- */
-
 const MessageThread = ({ selectedThreadId }) => {
     const [messages, setMessages] = useState([]);
+    const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(false);
+    const messageEndRef = useRef(null);  // Reference to scroll to the bottom
 
     // Fetch messages when the selectedThreadId changes
     useEffect(() => {
@@ -70,6 +64,7 @@ const MessageThread = ({ selectedThreadId }) => {
                         },
                     });
                     setMessages(response.data || []);  // Set the fetched messages
+                    scrollToBottom();  // Scroll to bottom when new thread is selected and messages are loaded
                 } catch (error) {
                     console.error('Error fetching messages:', error);
                 } finally {
@@ -79,6 +74,50 @@ const MessageThread = ({ selectedThreadId }) => {
             fetchMessages();
         }
     }, [selectedThreadId]);
+
+    // Scroll to the bottom of the message container
+    const scrollToBottom = () => {
+        if (messageEndRef.current) {
+            messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    // Send a new message
+    const handleSendMessage = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const decodedToken = jwtDecode(token);
+            const userId = decodedToken?.id;
+            const senderName = `${decodedToken?.first_name} ${decodedToken?.last_name}`;  // Get user's name from the token
+
+            const response = await axios.post(`${BASE_URL}/threads/${selectedThreadId}/messages`, {
+                content: newMessage,
+                sender_id: userId,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            // Append new message to the list, using sender's name from the token
+            const newMessageWithSender = {
+                ...response.data,
+                sender_name: senderName,  // Set sender_name from the token
+            };
+            setMessages((prevMessages) => [...prevMessages, newMessageWithSender]);
+            setNewMessage('');  // Clear input field
+            scrollToBottom();  // Scroll to the new message
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    };
+
+    // Scroll to the bottom every time messages are updated
+    useEffect(() => {
+        if (messages.length > 0) {
+            scrollToBottom();
+        }
+    }, [messages]);
 
     // Display a message if no thread is selected
     if (!selectedThreadId) {
@@ -90,39 +129,39 @@ const MessageThread = ({ selectedThreadId }) => {
         return <Typography variant="h6">Loading messages...</Typography>;
     }
 
-    // Display a message if no messages are found
-    if (!messages.length) {
-        return <Typography variant="h6">No messages found for this thread.</Typography>;
-    }
-
     return (
         <div>
-            {/* List of messages */}
-            <List>
-                {messages.map((message, index) => (
-                    <MessageBox key={index}>
-                        <Avatar>{message.sender_name?.[0] || 'U'}</Avatar>
-                        <MessageBubble>
-                            <ListItemText
-                                primary={message.sender_name || 'Unknown Sender'}
-                                secondary={message.content || 'No content available'}
-                            />
-                            <DateTime>{new Date(message.created_at).toLocaleString()}</DateTime>
-                        </MessageBubble>
-                    </MessageBox>
-                ))}
-            </List>
+            {/* Message display area */}
+            <MessageContainer>
+                <List>
+                    {messages.map((message, index) => (
+                        <MessageBox key={index}>
+                            <Avatar>{message.sender_name?.[0] || 'U'}</Avatar>
+                            <MessageBubble>
+                                <ListItemText
+                                    primary={message.sender_name || 'Unknown Sender'}
+                                    secondary={message.content || 'No content available'}
+                                />
+                                <DateTime>{new Date(message.created_at).toLocaleString()}</DateTime>
+                            </MessageBubble>
+                        </MessageBox>
+                    ))}
+                    <div ref={messageEndRef} />  {/* Anchor to scroll to */}
+                </List>
+            </MessageContainer>
 
-            {/* Form to send a new message (functionality can be implemented later) */}
+            {/* Send new message */}
             <SendContainer>
                 <Avatar />
                 <TextField
                     fullWidth
                     variant="outlined"
                     placeholder="Type a message"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
                     sx={{ marginLeft: '10px', marginRight: '10px' }}
                 />
-                <Button variant="contained" color="primary">
+                <Button variant="contained" color="primary" onClick={handleSendMessage}>
                     Send
                 </Button>
             </SendContainer>
