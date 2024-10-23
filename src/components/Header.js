@@ -68,7 +68,7 @@ const DealButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: #d7e1eb; /* Slight hover effect */
+    background-color: #d7e1eb;
   }
 `;
 
@@ -91,32 +91,6 @@ const StyledInputBase = styled(InputBase)`
 `;
 
 const BASE_URL = 'http://localhost:5001';  // Base URL for the API
-
-/**
- * Header Component
- * 
- * This component is responsible for rendering the top navigation bar of the application.
- * It displays the logo, navigation links, search functionality, deal selection, notifications, and user profile information.
- * 
- * State:
- * - token (String): JWT token used for authenticating API requests, stored in localStorage.
- * - deals (Array): A list of deals fetched from the server for the authenticated user.
- * - user (Object): Information about the authenticated user fetched from the API.
- * - dealAnchorEl (HTMLElement): Anchor element for the deal dropdown menu.
- * - userAnchorEl (HTMLElement): Anchor element for the user profile dropdown menu.
- * - isSearchExpanded (Boolean): Determines whether the search input field is expanded or collapsed.
- * 
- * Props:
- * - selectedDeal (Object): The currently selected deal, managed by the parent component.
- * - setSelectedDeal (Function): A function passed from the parent component to update the selected deal.
- * 
- * Key Features:
- * - Allows users to select a deal from a dropdown menu.
- * - Displays user profile information including their name, role, and access level.
- * - Provides search functionality that expands or collapses dynamically.
- * - Fetches and displays user-specific deals and profile information upon component mounting.
- * - Logs the user out by clearing the JWT token from localStorage and refreshing the page.
- */
 
 const Header = ({ selectedDeal, setSelectedDeal }) => {
     const [token, setToken] = useState(localStorage.getItem('token') || '');
@@ -142,11 +116,9 @@ const Header = ({ selectedDeal, setSelectedDeal }) => {
                 const dealsResponse = await axios.get(`${BASE_URL}/deals`, config);
                 const fetchedDeals = dealsResponse.data;
 
-                if (fetchedDeals.length > 0) {
-                    setDeals(fetchedDeals);
-                    if (!selectedDeal) {
-                        setSelectedDeal(fetchedDeals[0]);  // Set the first deal as the default if no deal is selected
-                    }
+                setDeals(fetchedDeals);
+                if (fetchedDeals.length > 0 && !selectedDeal) {
+                    setSelectedDeal(fetchedDeals[0]);  // Set the first deal as the default if no deal is selected
                 }
 
                 // Fetch user info
@@ -193,10 +165,7 @@ const Header = ({ selectedDeal, setSelectedDeal }) => {
         setIsSearchExpanded((prev) => !prev);
     };
 
-    if (!user || !selectedDeal) {
-        return <div>Loading...</div>; // Loading state while data is being fetched
-    }
-
+    // Ensure the header is displayed even if there are no deals or user data yet
     return (
         <StyledAppBar>
             <LogoContainer>
@@ -216,9 +185,15 @@ const Header = ({ selectedDeal, setSelectedDeal }) => {
 
             <RightSection>
                 {/* Deal Dropdown Button */}
-                <DealButton onClick={handleDealClick}>
-                    {selectedDeal ? selectedDeal.deal_name : "Select a Deal"} {/* Display the selected deal */}
-                </DealButton>
+                {deals.length > 0 ? (
+                    <DealButton onClick={handleDealClick}>
+                        {selectedDeal ? selectedDeal.deal_name : "Select a Deal"} {/* Display the selected deal */}
+                    </DealButton>
+                ) : (
+                    <DealButton disabled>
+                        No Deals Available {/* Message if no deals are available */}
+                    </DealButton>
+                )}
 
                 {/* Deal Dropdown Menu */}
                 <Menu
@@ -257,7 +232,7 @@ const Header = ({ selectedDeal, setSelectedDeal }) => {
                 {/* User Menu */}
                 <IconButton onClick={handleUserMenuClick}>
                     <Avatar
-                        src={user.avatarUrl || 'https://cdn.usegalileo.ai/stability/07c83bff-b55a-44ca-a01f-a1e09a0d4ac6.png'}
+                        src={user?.avatarUrl || 'https://cdn.usegalileo.ai/stability/07c83bff-b55a-44ca-a01f-a1e09a0d4ac6.png'}
                         alt="Profile"
                         sx={{ width: 40, height: 40 }}
                     />
@@ -277,15 +252,21 @@ const Header = ({ selectedDeal, setSelectedDeal }) => {
                         },
                     }}
                 >
-                    <MenuItem disabled>
-                        <strong>{user.first_name} {user.last_name}</strong>
-                    </MenuItem>
-                    <MenuItem disabled>
-                        Access: {user.access}
-                    </MenuItem>
-                    <MenuItem disabled>
-                        Role: {user.role}
-                    </MenuItem>
+                    {user ? (
+                        <>
+                            <MenuItem disabled>
+                                <strong>{user.first_name} {user.last_name}</strong>
+                            </MenuItem>
+                            <MenuItem disabled>
+                                Access: {user.access}
+                            </MenuItem>
+                            <MenuItem disabled>
+                                Role: {user.role}
+                            </MenuItem>
+                        </>
+                    ) : (
+                        <MenuItem disabled>Loading user...</MenuItem>
+                    )}
                     <MenuItem onClick={handleLogout} sx={{ color: 'red', fontWeight: 'bold' }}>
                         Sign Out
                     </MenuItem>
