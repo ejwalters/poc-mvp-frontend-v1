@@ -1,27 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { List, ListItem, ListItemText, Avatar, TextField, Button, Box, Typography } from '@mui/material';  // Added Typography import
+import React, { useState } from 'react';
+import { List, ListItem, ListItemText, Avatar, TextField, Button, Box, Typography, Divider, Pagination } from '@mui/material'; // Added Pagination component
 import styled from 'styled-components';
-import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5001';
 
 // Styled components for message list
-const SearchContainer = styled.div`
+const SearchContainer = styled(Box)`
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 0;
+  margin-bottom: 16px;
 `;
 
 const StyledAvatar = styled(Avatar)`
   margin-right: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);  /* Add subtle shadow */
 `;
 
 const StyledTextField = styled(TextField)`
   flex-grow: 1;
+  background-color: white;
+  border-radius: 8px;
+  padding: 8px;
 
   .MuiOutlinedInput-root {
-    height: 36px;
+    height: 40px;
     padding: 0 12px;
     font-size: 14px;
   }
@@ -32,19 +36,15 @@ const StyledTextField = styled(TextField)`
   }
 `;
 
-const CreateButton = styled.button`
-  margin-left: 10px;
-  height: 36px;
-  padding: 0 15px;
+const CreateButton = styled(Button)`
   background-color: #007bff;
   color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  padding: 8px 20px;
   font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-transform: none;
+  font-weight: bold;
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 
   &:hover {
     background-color: #0056b3;
@@ -52,20 +52,21 @@ const CreateButton = styled.button`
 `;
 
 const StyledListItem = styled(ListItem)`
-  cursor: pointer;
-  align-items: flex-start;
-  background-color: ${(props) => (props.selected ? '#e0f7fa' : 'transparent')};
-  border-left: ${(props) => (props.selected ? '4px solid #007bff' : 'none')};
+  display: flex;
+  align-items: center;
+  padding: 16px;
   transition: background-color 0.3s ease, border-left 0.3s ease;
+  cursor: pointer;
+  background-color: ${(props) => (props.selected ? '#f0f4ff' : 'transparent')};
+  border-left: ${(props) => (props.selected ? '4px solid #007bff' : 'none')};
+
   &:hover {
-    background-color: #f5f5f5;
+    background-color: #f9f9f9;
   }
 `;
 
-const PaginationContainer = styled(Box)`
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
+const DividerStyled = styled(Divider)`
+  margin: 8px 0;
 `;
 
 /**
@@ -104,17 +105,14 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateN
         return subjectMatch || messageOrSenderMatch;
     });
 
-    // Handle page change (next and previous)
-    const handleNextPage = () => {
-        setCurrentPage((prevPage) => prevPage + 1);
-    };
-
-    const handlePreviousPage = () => {
-        setCurrentPage((prevPage) => prevPage - 1);
+    // Handle page change
+    const handlePageChange = (event, value) => {
+        setCurrentPage(value);
     };
 
     return (
-        <>
+        <Box>
+            {/* Search bar and new thread button */}
             <SearchContainer>
                 <StyledTextField
                     variant="outlined"
@@ -126,43 +124,40 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateN
                 <CreateButton onClick={onCreateNewThread}>New Thread</CreateButton>
             </SearchContainer>
 
+            {/* Message List */}
             <List>
                 {currentThreads.length > 0 ? (
                     currentThreads.map((thread) => (
-                        <StyledListItem
-                            key={thread.id}
-                            selected={thread.id === selectedThreadId}
-                            onClick={() => onSelectThread(thread)}
-                        >
-                            <StyledAvatar alt={thread.subject} />
-                            <ListItemText
-                                primary={thread.subject}
-                                secondary={new Date(thread.last_message_date).toLocaleDateString()}
-                            />
-                        </StyledListItem>
+                        <React.Fragment key={thread.id}>
+                            <StyledListItem
+                                selected={thread.id === selectedThreadId}
+                                onClick={() => onSelectThread(thread)}
+                            >
+                                <StyledAvatar alt={thread.subject} />
+                                <ListItemText
+                                    primary={thread.subject}
+                                    secondary={new Date(thread.last_message_date).toLocaleDateString()}
+                                />
+                            </StyledListItem>
+                            <DividerStyled />
+                        </React.Fragment>
                     ))
                 ) : (
-                    <Typography>No threads match your search</Typography>
+                    <Typography variant="body1" sx={{ textAlign: 'center', marginTop: '20px' }}>
+                        No threads match your search
+                    </Typography>
                 )}
             </List>
 
-            {/* Pagination Controls */}
-            <PaginationContainer>
-                <Button
-                    disabled={currentPage === 1}
-                    onClick={handlePreviousPage}
-                >
-                    Previous
-                </Button>
-                <Typography>Page {currentPage}</Typography>
-                <Button
-                    disabled={indexOfLastThread >= filteredThreads.length}
-                    onClick={handleNextPage}
-                >
-                    Next
-                </Button>
-            </PaginationContainer>
-        </>
+            {/* Pagination */}
+            <Pagination
+                count={Math.ceil(filteredThreads.length / threadsPerPage)}
+                page={currentPage}
+                onChange={handlePageChange}
+                sx={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}
+                color="primary"
+            />
+        </Box>
     );
 };
 
