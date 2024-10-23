@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, ListItem, ListItemText, Avatar, TextField } from '@mui/material';
+import { List, ListItem, ListItemText, Avatar, TextField, Button, Box, Typography } from '@mui/material';  // Added Typography import
 import styled from 'styled-components';
 import axios from 'axios';
 
@@ -62,27 +62,56 @@ const StyledListItem = styled(ListItem)`
   }
 `;
 
+const PaginationContainer = styled(Box)`
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+`;
+
 /**
- * MessageList Component
+ * MessageList Component with Pagination and Sorting by last_message_date
  */
 const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateNewThread, threads }) => {
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const threadsPerPage = 10;  // Number of threads per page
 
+    // Sort threads by the most recent last_message_date
+    const sortedThreads = threads.sort((a, b) => new Date(b.last_message_date) - new Date(a.last_message_date));
+
+    // Calculate the index range for the current page
+    const indexOfLastThread = currentPage * threadsPerPage;
+    const indexOfFirstThread = indexOfLastThread - threadsPerPage;
+    const currentThreads = sortedThreads.slice(indexOfFirstThread, indexOfLastThread);
+
+    // Handle Search
     const handleSearchChange = (event) => {
         setSearchTerm(event.target.value);
+        setCurrentPage(1); // Reset to first page when search is active
     };
 
-    const filteredThreads = threads.filter((thread) => {
+    // Filter threads based on the search term
+    const filteredThreads = sortedThreads.filter((thread) => {
         const lowerSearchTerm = searchTerm.toLowerCase();
-        const subjectMatch = thread.subject.toLowerCase().includes(lowerSearchTerm);
+        const subjectMatch = thread.subject?.toLowerCase().includes(lowerSearchTerm);
 
-        const messageOrSenderMatch = thread.messages && thread.messages.some((message) =>
-            message.content.toLowerCase().includes(lowerSearchTerm) ||
-            `${message.sender_name}`.toLowerCase().includes(lowerSearchTerm)
-        );
+        const messageOrSenderMatch = thread.messages && thread.messages.some((message) => {
+            const content = message.content ? message.content.toLowerCase() : '';
+            const senderName = message.sender_name ? message.sender_name.toLowerCase() : '';
+            return content.includes(lowerSearchTerm) || senderName.includes(lowerSearchTerm);
+        });
 
         return subjectMatch || messageOrSenderMatch;
     });
+
+    // Handle page change (next and previous)
+    const handleNextPage = () => {
+        setCurrentPage((prevPage) => prevPage + 1);
+    };
+
+    const handlePreviousPage = () => {
+        setCurrentPage((prevPage) => prevPage - 1);
+    };
 
     return (
         <>
@@ -98,8 +127,8 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateN
             </SearchContainer>
 
             <List>
-                {filteredThreads.length > 0 ? (
-                    filteredThreads.map((thread) => (
+                {currentThreads.length > 0 ? (
+                    currentThreads.map((thread) => (
                         <StyledListItem
                             key={thread.id}
                             selected={thread.id === selectedThreadId}
@@ -113,9 +142,26 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateN
                         </StyledListItem>
                     ))
                 ) : (
-                    <p>No threads match your search</p>
+                    <Typography>No threads match your search</Typography>
                 )}
             </List>
+
+            {/* Pagination Controls */}
+            <PaginationContainer>
+                <Button
+                    disabled={currentPage === 1}
+                    onClick={handlePreviousPage}
+                >
+                    Previous
+                </Button>
+                <Typography>Page {currentPage}</Typography>
+                <Button
+                    disabled={indexOfLastThread >= filteredThreads.length}
+                    onClick={handleNextPage}
+                >
+                    Next
+                </Button>
+            </PaginationContainer>
         </>
     );
 };
