@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { List, ListItem, ListItemText, Avatar, TextField, Button, Box, Typography, Divider, Pagination } from '@mui/material'; // Added Pagination component
+import { List, ListItem, ListItemText, Avatar, TextField, Box, Typography, Divider, Pagination, Button } from '@mui/material'; // Added Pagination and Button components
 import styled from 'styled-components';
 
 const BASE_URL = 'http://localhost:5001';
@@ -11,6 +11,10 @@ const SearchContainer = styled(Box)`
   justify-content: space-between;
   padding: 10px 0;
   margin-bottom: 16px;
+
+  & > *:not(:last-child) {
+    margin-right: 16px;  /* Add space between search input and new thread button */
+  }
 `;
 
 const StyledAvatar = styled(Avatar)`
@@ -22,10 +26,9 @@ const StyledTextField = styled(TextField)`
   flex-grow: 1;
   background-color: white;
   border-radius: 8px;
-  padding: 8px;
 
   .MuiOutlinedInput-root {
-    height: 40px;
+    height: 40px;  /* Match the height of the New Thread button */
     padding: 0 12px;
     font-size: 14px;
   }
@@ -37,19 +40,21 @@ const StyledTextField = styled(TextField)`
 `;
 
 const CreateButton = styled(Button)`
-  background-color: #007bff;
-  color: white;
-  padding: 8px 20px;
+  background-color: #007bff !important;  /* Force blue background */
+  color: white !important;  /* Ensure the text is white */
+  height: 40px;  /* Match the height of the search input */
   font-size: 14px;
   text-transform: none;
   font-weight: bold;
   border-radius: 8px;
+  padding: 8px 20px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-
+  
   &:hover {
-    background-color: #0056b3;
+    background-color: #0056b3 !important;  /* Force darker blue on hover */
   }
 `;
+
 
 const StyledListItem = styled(ListItem)`
   display: flex;
@@ -80,11 +85,6 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateN
     // Sort threads by the most recent last_message_date
     const sortedThreads = threads.sort((a, b) => new Date(b.last_message_date) - new Date(a.last_message_date));
 
-    // Calculate the index range for the current page
-    const indexOfLastThread = currentPage * threadsPerPage;
-    const indexOfFirstThread = indexOfLastThread - threadsPerPage;
-    const currentThreads = sortedThreads.slice(indexOfFirstThread, indexOfLastThread);
-
     // Handle Search
     const handleSearchChange = (event) => {
         setSearchTerm(event.target.value);
@@ -94,16 +94,24 @@ const MessageList = ({ selectedDeal, selectedThreadId, onSelectThread, onCreateN
     // Filter threads based on the search term
     const filteredThreads = sortedThreads.filter((thread) => {
         const lowerSearchTerm = searchTerm.toLowerCase();
+
+        // Check if the subject matches the search term
         const subjectMatch = thread.subject?.toLowerCase().includes(lowerSearchTerm);
 
+        // Check if any message content or sender name matches the search term
         const messageOrSenderMatch = thread.messages && thread.messages.some((message) => {
-            const content = message.content ? message.content.toLowerCase() : '';
-            const senderName = message.sender_name ? message.sender_name.toLowerCase() : '';
-            return content.includes(lowerSearchTerm) || senderName.includes(lowerSearchTerm);
+            const contentMatch = message.content?.toLowerCase().includes(lowerSearchTerm);
+            const senderNameMatch = message.sender_name?.toLowerCase().includes(lowerSearchTerm);
+            return contentMatch || senderNameMatch;
         });
 
         return subjectMatch || messageOrSenderMatch;
     });
+
+    // Calculate the index range for the current page
+    const indexOfLastThread = currentPage * threadsPerPage;
+    const indexOfFirstThread = indexOfLastThread - threadsPerPage;
+    const currentThreads = filteredThreads.slice(indexOfFirstThread, indexOfLastThread);
 
     // Handle page change
     const handlePageChange = (event, value) => {
